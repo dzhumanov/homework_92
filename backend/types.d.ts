@@ -22,10 +22,18 @@ export interface ActiveConnections {
   [id: string]: WebSocket;
 }
 
+export interface User {
+  _id: string;
+  username: string;
+  role: string;
+  token: string;
+  displayName: string;
+}
+
 export interface IncomingMessage {
   type: string;
   payload: {
-    username: string;
+    user: User;
     message: string;
   };
 }

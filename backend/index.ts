@@ -6,6 +6,8 @@ import config from "./config";
 import userRouter from "./routers/users";
 import expressWs from "express-ws";
 import { ActiveConnections, IncomingMessage } from "./types";
+import Message from "./models/Message";
+import messagesRouter from "./routers/messages";
 
 const app = express();
 expressWs(app);
@@ -16,6 +18,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/users", userRouter);
+app.use("/messages", messagesRouter)
 
 const webSocketRouter = express.Router();
 
@@ -37,11 +40,16 @@ webSocketRouter.ws("/chat", (ws, req) => {
     console.log(message.toString());
     const parsedMessage = JSON.parse(message.toString()) as IncomingMessage;
     if (parsedMessage.type === "SEND_MESSAGE") {
+      const newMessage = new Message({
+        user: parsedMessage.payload.user,
+        message: parsedMessage.payload.message,
+      });
+      newMessage.save();
       Object.values(activeConnections).forEach((connection) => {
         const outgoingMsg = {
           type: "NEW_MESSAGE",
           payload: {
-            username: parsedMessage.payload.username,
+            user: parsedMessage.payload.user,
             message: parsedMessage.payload.message,
           },
         };

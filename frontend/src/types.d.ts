@@ -40,8 +40,9 @@ export interface User {
 
 export interface Message {
   _id: string;
-  username: string;
+  user: User;
   message: string;
+  date: number;
 }
 
 export interface IncomingChatMessage {

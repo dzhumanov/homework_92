@@ -1,17 +1,29 @@
 import { Grid, Typography } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { selectMessages } from "./messagesSlice";
 import { IncomingMessage, Message } from "../../types";
 import { useEffect, useRef, useState } from "react";
 import { selectUser } from "../users/usersSlice";
+import { fetchMessages } from "./messagesThunk";
+import dayjs from "dayjs";
 
 const Messages = () => {
-  //   const dispatch = useAppDispatch();
-  //   const messages = useAppSelector(selectMessages);
+  const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
   const ws = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    dispatch(fetchMessages())
+      .then((result) => {
+        if (fetchMessages.fulfilled.match(result)) {
+          setMessages(result.payload);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }, [dispatch]);
 
   useEffect(() => {
     ws.current = new WebSocket("ws://localhost:8000/chat");
@@ -50,7 +62,10 @@ const Messages = () => {
       JSON.stringify({
         type: "SEND_MESSAGE",
         payload: {
-          username: user?.username,
+          user: {
+            _id: user?._id,
+            username: user?.username,
+          },
           message: messageText,
         },
       })
@@ -61,9 +76,12 @@ const Messages = () => {
     <>
       <div>
         {messages.map((message) => (
-          <Grid container direction="column" key={message._id}>
-            <Typography variant="h4">{message.username}</Typography>
+          <Grid container direction="column" key={Math.random()}>
+            <Typography variant="h4">{message.user.username}</Typography>
             <Typography variant="h4">{message.message}</Typography>
+            <Typography variant="h4">
+              At: {dayjs(message.date).format("HH:mm:ss")}
+            </Typography>
           </Grid>
         ))}
       </div>
