@@ -1,4 +1,5 @@
 import { Model } from "mongoose";
+import { WebSocket } from "ws";
 
 export interface UserFields {
   username: string;
@@ -16,3 +17,15 @@ interface UserMethods {
 }
 
 type UserModel = Model<UserFields, {}, UserMethods>;
+
+export interface ActiveConnections {
+  [id: string]: WebSocket;
+}
+
+export interface IncomingMessage {
+  type: string;
+  payload: {
+    username: string;
+    message: string;
+  };
+}

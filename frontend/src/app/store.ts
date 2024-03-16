@@ -11,6 +11,7 @@ import {
   persistReducer,
 } from "redux-persist";
 import persistStore from "redux-persist/es/persistStore";
+import { messagesReducer } from "../features/messages/messagesSlice";
 
 const usersPersistConfig = {
   key: "store:users",
@@ -20,6 +21,7 @@ const usersPersistConfig = {
 
 const rootReducer = combineReducers({
   users: persistReducer(usersPersistConfig, usersReducer),
+  messages: messagesReducer,
 });
 
 export const store = configureStore({
