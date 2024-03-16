@@ -1,10 +1,10 @@
 export interface LoginMutation {
-  email: string;
+  username: string;
   password: string;
 }
 
 export interface RegisterMutation {
-  email: string;
+  username: string;
   password: string;
   displayName: string;
 }
@@ -32,7 +32,7 @@ export interface ValidationError {
 
 export interface User {
   _id: string;
-  email: string;
+  username: string;
   role: string;
   token: string;
   displayName: string;
