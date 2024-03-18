@@ -78,12 +78,13 @@ webSocketRouter.ws("/chat", (ws, req) => {
         const messages = await Message.find()
           .sort({ date: -1 })
           .limit(30)
-          .populate("user", "username");
+          .populate("user", "username displayName");
 
+        const reversedMessages = messages.reverse();
         ws.send(
           JSON.stringify({
             type: "MESSAGES",
-            payload: messages,
+            payload: reversedMessages,
           })
         );
 

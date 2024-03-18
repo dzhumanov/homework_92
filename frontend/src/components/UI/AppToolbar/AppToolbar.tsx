@@ -16,7 +16,7 @@ const Link = styled(NavLink)({
 const AppToolbar = () => {
   const user = useAppSelector(selectUser);
   return (
-    <AppBar position="sticky" sx={{ mb: 2 }}>
+    <AppBar position="sticky" sx={{ mb: 2, bgcolor: "#000" }}>
       <Toolbar>
         <Grid container justifyContent="space-between" alignItems="center">
           <Typography variant="h3" component="div" sx={{ textAlign: "center" }}>
