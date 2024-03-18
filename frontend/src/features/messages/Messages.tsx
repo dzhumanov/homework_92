@@ -28,6 +28,23 @@ const Messages = () => {
   useEffect(() => {
     ws.current = new WebSocket("ws://localhost:8000/chat");
 
+    ws.current.addEventListener("open", () => {
+      if (ws.current) {
+        ws.current.send(
+          JSON.stringify({
+            type: "LOGIN",
+            payload: {
+              user: {
+                _id: user?._id,
+                username: user?.username,
+                token: user?.token,
+              },
+            },
+          })
+        );
+      }
+    });
+
     ws.current.addEventListener("close", () => console.log("ws closed"));
 
     ws.current.addEventListener("message", (event) => {

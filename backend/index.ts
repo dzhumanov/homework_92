@@ -8,6 +8,7 @@ import expressWs from "express-ws";
 import { ActiveConnections, IncomingMessage } from "./types";
 import Message from "./models/Message";
 import messagesRouter from "./routers/messages";
+import User from "./models/User";
 
 const app = express();
 expressWs(app);
@@ -18,27 +19,40 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/users", userRouter);
-app.use("/messages", messagesRouter)
+app.use("/messages", messagesRouter);
 
 const webSocketRouter = express.Router();
 
 const activeConnections: ActiveConnections = {};
+
+const authWS = async (token: string) => {
+  const user = await User.findOne({ token });
+  return !!user;
+};
 
 webSocketRouter.ws("/chat", (ws, req) => {
   const id = crypto.randomUUID();
   console.log("Client connected id=", id);
   activeConnections[id] = ws;
 
-  ws.send(
-    JSON.stringify({
-      type: "WELCOME",
-      payload: "Hello, you have connected to the chat!",
-    })
-  );
-
-  ws.on("message", (message) => {
-    console.log(message.toString());
+  ws.on("message", async (message) => {
     const parsedMessage = JSON.parse(message.toString()) as IncomingMessage;
+
+    if (parsedMessage.type === "LOGIN") {
+      const isAuthenticated = await authWS(parsedMessage.payload.user.token);
+
+      if (isAuthenticated) {
+        console.log("Authentication successful");
+        ws.send(
+          JSON.stringify({
+            type: "WELCOME",
+            payload: "Hello, you have connected to the chat!",
+          })
+        );
+      } else {
+        ws.close();
+      }
+    }
     if (parsedMessage.type === "SEND_MESSAGE") {
       const newMessage = new Message({
         user: parsedMessage.payload.user,

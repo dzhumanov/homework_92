@@ -37,3 +37,8 @@ export interface IncomingMessage {
     message: string;
   };
 }
+
+export interface IncomingLogin {
+  type: string;
+  payload: string;
+}
