@@ -5,9 +5,13 @@ import config from "./config";
 
 import userRouter from "./routers/users";
 import expressWs from "express-ws";
-import { ActiveConnections, IncomingMessage } from "./types";
+import {
+  ActiveConnections,
+  IncomingMessage,
+  OnlineUser,
+  OnlineUsers,
+} from "./types";
 import Message from "./models/Message";
-import messagesRouter from "./routers/messages";
 import User from "./models/User";
 
 const app = express();
@@ -19,15 +23,36 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/users", userRouter);
-app.use("/messages", messagesRouter);
 
 const webSocketRouter = express.Router();
 
 const activeConnections: ActiveConnections = {};
+let onlineUsers: OnlineUser[] = [];
+let LoggedUsers: OnlineUsers = {};
 
 const authWS = async (token: string) => {
   const user = await User.findOne({ token });
   return !!user;
+};
+
+const sendMessageToActive = (payload: any) => {
+  Object.values(activeConnections).forEach((connection) => {
+    const outgoingMsg = {
+      type: "NEW_MESSAGE",
+      payload,
+    };
+    connection.send(JSON.stringify(outgoingMsg));
+  });
+};
+
+const sendOnlineToActive = () => {
+  Object.values(activeConnections).forEach((connection) => {
+    const outgoingMsg = {
+      type: "ONLINE",
+      payload: onlineUsers,
+    };
+    connection.send(JSON.stringify(outgoingMsg));
+  });
 };
 
 webSocketRouter.ws("/chat", (ws, req) => {
@@ -49,6 +74,31 @@ webSocketRouter.ws("/chat", (ws, req) => {
             payload: "Hello, you have connected to the chat!",
           })
         );
+
+        const messages = await Message.find()
+          .sort({ date: -1 })
+          .limit(30)
+          .populate("user", "username");
+
+        ws.send(
+          JSON.stringify({
+            type: "MESSAGES",
+            payload: messages,
+          })
+        );
+
+        if (LoggedUsers[id]) {
+          LoggedUsers[id] = parsedMessage.payload.user;
+        }
+        const existingUser = onlineUsers.find(
+          (user) => user.token === parsedMessage.payload.user.token
+        );
+        if (!existingUser) {
+          onlineUsers.push(parsedMessage.payload.user);
+          console.log(parsedMessage.payload.user);
+        }
+
+        sendOnlineToActive();
       } else {
         ws.close();
       }
@@ -59,21 +109,19 @@ webSocketRouter.ws("/chat", (ws, req) => {
         message: parsedMessage.payload.message,
       });
       newMessage.save();
-      Object.values(activeConnections).forEach((connection) => {
-        const outgoingMsg = {
-          type: "NEW_MESSAGE",
-          payload: {
-            user: parsedMessage.payload.user,
-            message: parsedMessage.payload.message,
-          },
-        };
-        connection.send(JSON.stringify(outgoingMsg));
-      });
+      sendMessageToActive(parsedMessage.payload);
     }
   });
 
   ws.on("close", () => {
     console.log("Client disconnected", id);
+    // const userLog = LoggedUsers[id];
+    // onlineUsers = onlineUsers.filter((user) => user.token !== userLog.token);
+    // console.log(onlineUsers);
+    // if (userLog) {
+    //   delete LoggedUsers[id];
+    //   sendOnlineToActive();
+    // }
     delete activeConnections[id];
   });
 });

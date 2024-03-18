@@ -25,9 +25,9 @@ export interface ActiveConnections {
 export interface User {
   _id: string;
   username: string;
+  displayName: string;
   role: string;
   token: string;
-  displayName: string;
 }
 
 export interface IncomingMessage {
@@ -38,7 +38,12 @@ export interface IncomingMessage {
   };
 }
 
-export interface IncomingLogin {
-  type: string;
-  payload: string;
+export interface OnlineUser {
+  _id: string;
+  displayName: string;
+  token: string;
+}
+
+export interface OnlineUsers {
+  [id: string]: OnlineUser;
 }

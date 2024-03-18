@@ -1,31 +1,23 @@
 import { Grid, Typography } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { IncomingMessage, Message } from "../../types";
+import { IncomingMessage, Message, OnlineUser } from "../../types";
 import { useEffect, useRef, useState } from "react";
 import { selectUser } from "../users/usersSlice";
-import { fetchMessages } from "./messagesThunk";
-import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
+import MessageItem from "./Components/MessageItem";
 
 const Messages = () => {
-  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [online, setOnline] = useState<OnlineUser[]>([]);
   const [messageText, setMessageText] = useState("");
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    dispatch(fetchMessages())
-      .then((result) => {
-        if (fetchMessages.fulfilled.match(result)) {
-          setMessages(result.payload);
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  }, [dispatch]);
-
-  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
     ws.current = new WebSocket("ws://localhost:8000/chat");
 
     ws.current.addEventListener("open", () => {
@@ -37,6 +29,7 @@ const Messages = () => {
               user: {
                 _id: user?._id,
                 username: user?.username,
+                displayName: user?.displayName,
                 token: user?.token,
               },
             },
@@ -50,8 +43,16 @@ const Messages = () => {
     ws.current.addEventListener("message", (event) => {
       const decodedMessage = JSON.parse(event.data) as IncomingMessage;
 
+      if (decodedMessage.type === "MESSAGES") {
+        setMessages(decodedMessage.payload);
+      }
+
       if (decodedMessage.type === "NEW_MESSAGE") {
         setMessages((prev) => [...prev, decodedMessage.payload]);
+      }
+
+      if (decodedMessage.type === "ONLINE") {
+        setOnline(decodedMessage.payload);
       }
 
       if (decodedMessage.type === "WELCOME") {
@@ -90,28 +91,45 @@ const Messages = () => {
   };
 
   return (
-    <>
-      <div>
-        {messages.map((message) => (
-          <Grid container direction="column" key={Math.random()}>
-            <Typography variant="h4">{message.user.username}</Typography>
-            <Typography variant="h4">{message.message}</Typography>
-            <Typography variant="h4">
-              At: {dayjs(message.date).format("HH:mm:ss")}
+    <Grid
+      container
+      sx={{
+        background: "#fff",
+        border: "3px solid black",
+        borderRadius: "15px",
+      }}
+    >
+      <Grid item container xs={8} direction="column">
+        <div>
+          {messages.map((message) => (
+            <MessageItem message={message} key={message._id} />
+          ))}
+        </div>
+        <form onSubmit={sendMessage}>
+          <input
+            type="text"
+            name="messageText"
+            value={messageText}
+            onChange={onMessage}
+          />
+          <input type="submit" value="send" />
+        </form>
+      </Grid>
+      <Grid item container xs={3} direction="column">
+        <Typography variant="h4">Online:</Typography>
+        <Grid item container direction="column">
+          {online.map((onlineItem) => (
+            <Typography
+              variant="h4"
+              sx={{ border: "1px solid black" }}
+              key={onlineItem._id}
+            >
+              {onlineItem.username}
             </Typography>
-          </Grid>
-        ))}
-      </div>
-      <form onSubmit={sendMessage}>
-        <input
-          type="text"
-          name="messageText"
-          value={messageText}
-          onChange={onMessage}
-        />
-        <input type="submit" value="send" />
-      </form>
-    </>
+          ))}
+        </Grid>
+      </Grid>
+    </Grid>
   );
 };
 
