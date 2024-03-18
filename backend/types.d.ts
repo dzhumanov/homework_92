@@ -21,6 +21,15 @@ export interface ActiveConnections {
   [id: string]: WebSocket;
 }
 
+export interface UserType {
+  _id: mongoose.Types.ObjectId;
+  username: string;
+  displayName: string;
+  role: string;
+  token: string;
+  isActive: boolean;
+}
+
 export interface IncomingMessage {
   type: string;
   payload: {
@@ -29,6 +38,13 @@ export interface IncomingMessage {
     message: string;
     date: Date;
   };
+}
+
+export interface payloadMutation {
+  _id: mongoose.Type.ObjectId;
+  user: UserType;
+  message: string;
+  date: Date;
 }
 
 export interface OnlineUser {

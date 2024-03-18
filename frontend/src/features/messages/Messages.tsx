@@ -90,12 +90,24 @@ const Messages = () => {
           user: {
             _id: user?._id,
             username: user?.username,
+            displayName: user?.displayName,
           },
           message: messageText,
         },
       })
     );
     setMessageText("");
+  };
+
+  const deleteMessage = (id: string) => {
+    if (!ws.current) return;
+
+    ws.current.send(
+      JSON.stringify({
+        type: "DELETE",
+        payload: id,
+      })
+    );
   };
 
   return (
@@ -110,11 +122,15 @@ const Messages = () => {
             border: "3px solid black",
             borderRadius: "15px",
             height: "70vh",
-            overflowY: "auto",
+            overflow: "auto",
           }}
         >
           {messages.map((message) => (
-            <MessageItem message={message} key={message._id} />
+            <MessageItem
+              message={message}
+              key={message._id}
+              onDelete={() => deleteMessage(message._id)}
+            />
           ))}
           <div ref={messagesEndRef} />
         </Grid>

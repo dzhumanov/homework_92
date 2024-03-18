@@ -27,6 +27,7 @@ const MessageItem: React.FC<Props> = ({ message, onDelete }) => {
             color="primary"
             variant="contained"
             sx={{
+              ml: "auto",
               mr: "20px",
               fontSize: "20px",
               bgcolor: "red",

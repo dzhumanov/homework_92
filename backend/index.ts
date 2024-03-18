@@ -4,7 +4,12 @@ import mongoose from "mongoose";
 import config from "./config";
 import userRouter from "./routers/users";
 import expressWs from "express-ws";
-import { ActiveConnections, IncomingMessage, OnlineUsers } from "./types";
+import {
+  ActiveConnections,
+  IncomingMessage,
+  OnlineUsers,
+  payloadMutation,
+} from "./types";
 import Message from "./models/Message";
 import User from "./models/User";
 
@@ -27,7 +32,7 @@ const authWS = async (token: string) => {
   return user;
 };
 
-const sendMessageToActive = (payload: any) => {
+const sendMessageToActive = (payload: payloadMutation) => {
   Object.values(activeConnections).forEach((connection) => {
     const outgoingMsg = {
       type: "NEW_MESSAGE",
@@ -95,13 +100,42 @@ webSocketRouter.ws("/chat", (ws, req) => {
         ws.close();
       }
     }
+
     if (parsedMessage.type === "SEND_MESSAGE") {
       const newMessage = new Message({
-        user: parsedMessage.payload.user,
+        user: parsedMessage.payload.user._id,
         message: parsedMessage.payload.message,
       });
       newMessage.save();
-      sendMessageToActive(newMessage);
+
+      const payload: payloadMutation = {
+        user: parsedMessage.payload.user,
+        message: parsedMessage.payload.message,
+        date: new Date(),
+        _id: newMessage._id,
+      };
+
+      sendMessageToActive(payload);
+    }
+
+    if (parsedMessage.type === "DELETE") {
+      try {
+        await Message.findByIdAndDelete(parsedMessage.payload);
+        const messages = await Message.find()
+          .sort({ date: -1 })
+          .limit(30)
+          .populate("user", "username displayName");
+
+        const reversedMessages = messages.reverse();
+        ws.send(
+          JSON.stringify({
+            type: "MESSAGES",
+            payload: reversedMessages,
+          })
+        );
+      } catch (e) {
+        console.error(e);
+      }
     }
   });
 
