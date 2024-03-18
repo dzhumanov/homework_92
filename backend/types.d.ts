@@ -1,4 +1,4 @@
-import { Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { WebSocket } from "ws";
 
 export interface UserFields {
@@ -7,8 +7,7 @@ export interface UserFields {
   role: string;
   token: string;
   displayName: string;
-  avatar: string | null;
-  googleID?: string;
+  isActive: boolean;
 }
 
 interface UserMethods {
@@ -22,26 +21,21 @@ export interface ActiveConnections {
   [id: string]: WebSocket;
 }
 
-export interface User {
-  _id: string;
-  username: string;
-  displayName: string;
-  role: string;
-  token: string;
-}
-
 export interface IncomingMessage {
   type: string;
   payload: {
-    user: User;
+    _id: string;
+    user: UserType;
     message: string;
+    date: Date;
   };
 }
 
 export interface OnlineUser {
-  _id: string;
+  _id: mongoose.Types.ObjectId;
   displayName: string;
   token: string;
+  isActive: boolean;
 }
 
 export interface OnlineUsers {

@@ -44,6 +44,10 @@ const UserSchema = new mongoose.Schema<UserFields, UserModel, UserMethods>(
       type: String,
       required: true,
     },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     versionKey: false,

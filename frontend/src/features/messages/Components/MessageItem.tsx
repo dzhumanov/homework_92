@@ -8,7 +8,7 @@ interface Props {
 
 const MessageItem: React.FC<Props> = ({ message }) => {
   return (
-    <Grid container direction="column" key={Math.random()}>
+    <Grid container direction="column">
       <Typography variant="h4">{message.user.displayName}</Typography>
       <Typography variant="h4">{message.message}</Typography>
       <Typography variant="h4">

@@ -45,12 +45,6 @@ export interface Message {
   date: number;
 }
 
-export interface OnlineUser {
-  _id: string;
-  username: string;
-  token: string;
-}
-
 export interface IncomingWelcomeMessage {
   type: "WELCOME";
   payload: string;
@@ -68,7 +62,7 @@ export interface IncomingChatMessage {
 
 export interface incomingOnlineMessage {
   type: "ONLINE";
-  payload: OnlineUser[];
+  users: string[];
 }
 
 export type IncomingMessage =

@@ -2,15 +2,9 @@ import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
 import config from "./config";
-
 import userRouter from "./routers/users";
 import expressWs from "express-ws";
-import {
-  ActiveConnections,
-  IncomingMessage,
-  OnlineUser,
-  OnlineUsers,
-} from "./types";
+import { ActiveConnections, IncomingMessage, OnlineUsers } from "./types";
 import Message from "./models/Message";
 import User from "./models/User";
 
@@ -27,12 +21,10 @@ app.use("/users", userRouter);
 const webSocketRouter = express.Router();
 
 const activeConnections: ActiveConnections = {};
-let onlineUsers: OnlineUser[] = [];
-let LoggedUsers: OnlineUsers = {};
 
 const authWS = async (token: string) => {
   const user = await User.findOne({ token });
-  return !!user;
+  return user;
 };
 
 const sendMessageToActive = (payload: any) => {
@@ -45,12 +37,16 @@ const sendMessageToActive = (payload: any) => {
   });
 };
 
-const sendOnlineToActive = () => {
+const sendOnlineUsers = async () => {
+  const onlineUsers = await User.find({ isActive: true });
+  const onlinedisplayNames = onlineUsers.map((user) => user.displayName);
+
+  const outgoingMsg = {
+    type: "ONLINE",
+    users: onlinedisplayNames,
+  };
+
   Object.values(activeConnections).forEach((connection) => {
-    const outgoingMsg = {
-      type: "ONLINE",
-      payload: onlineUsers,
-    };
     connection.send(JSON.stringify(outgoingMsg));
   });
 };
@@ -60,13 +56,17 @@ webSocketRouter.ws("/chat", (ws, req) => {
   console.log("Client connected id=", id);
   activeConnections[id] = ws;
 
+  const users: OnlineUsers = {};
+
   ws.on("message", async (message) => {
     const parsedMessage = JSON.parse(message.toString()) as IncomingMessage;
 
     if (parsedMessage.type === "LOGIN") {
-      const isAuthenticated = await authWS(parsedMessage.payload.user.token);
+      const user = await authWS(parsedMessage.payload.user.token);
 
-      if (isAuthenticated) {
+      if (user) {
+        user.isActive = true;
+        await user.save();
         console.log("Authentication successful");
         ws.send(
           JSON.stringify({
@@ -87,18 +87,9 @@ webSocketRouter.ws("/chat", (ws, req) => {
           })
         );
 
-        if (LoggedUsers[id]) {
-          LoggedUsers[id] = parsedMessage.payload.user;
-        }
-        const existingUser = onlineUsers.find(
-          (user) => user.token === parsedMessage.payload.user.token
-        );
-        if (!existingUser) {
-          onlineUsers.push(parsedMessage.payload.user);
-          console.log(parsedMessage.payload.user);
-        }
+        await sendOnlineUsers();
 
-        sendOnlineToActive();
+        users[id] = user;
       } else {
         ws.close();
       }
@@ -109,19 +100,23 @@ webSocketRouter.ws("/chat", (ws, req) => {
         message: parsedMessage.payload.message,
       });
       newMessage.save();
-      sendMessageToActive(parsedMessage.payload);
+      sendMessageToActive(newMessage);
     }
   });
 
-  ws.on("close", () => {
+  ws.on("close", async () => {
     console.log("Client disconnected", id);
-    // const userLog = LoggedUsers[id];
-    // onlineUsers = onlineUsers.filter((user) => user.token !== userLog.token);
-    // console.log(onlineUsers);
-    // if (userLog) {
-    //   delete LoggedUsers[id];
-    //   sendOnlineToActive();
-    // }
+    const user = users[id];
+    if (user) {
+      const userDB = await User.findById(user._id);
+      if (userDB) {
+        userDB.isActive = false;
+        await userDB.save();
+        console.log("Client disconnected:", id);
+        sendOnlineUsers();
+      }
+      delete users[id];
+    }
     delete activeConnections[id];
   });
 });

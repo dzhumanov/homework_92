@@ -1,6 +1,6 @@
 import { Grid, Typography } from "@mui/material";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { IncomingMessage, Message, OnlineUser } from "../../types";
+import { useAppSelector } from "../../app/hooks";
+import { IncomingMessage, Message } from "../../types";
 import { useEffect, useRef, useState } from "react";
 import { selectUser } from "../users/usersSlice";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ const Messages = () => {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [online, setOnline] = useState<OnlineUser[]>([]);
+  const [online, setOnline] = useState<string[]>([]);
   const [messageText, setMessageText] = useState("");
   const ws = useRef<WebSocket | null>(null);
 
@@ -52,7 +52,7 @@ const Messages = () => {
       }
 
       if (decodedMessage.type === "ONLINE") {
-        setOnline(decodedMessage.payload);
+        setOnline(decodedMessage.users);
       }
 
       if (decodedMessage.type === "WELCOME") {
@@ -65,7 +65,7 @@ const Messages = () => {
         ws.current.close();
       }
     };
-  }, []);
+  }, [user]);
 
   const onMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessageText(e.target.value);
@@ -118,15 +118,12 @@ const Messages = () => {
       <Grid item container xs={3} direction="column">
         <Typography variant="h4">Online:</Typography>
         <Grid item container direction="column">
-          {online.map((onlineItem) => (
-            <Typography
-              variant="h4"
-              sx={{ border: "1px solid black" }}
-              key={onlineItem._id}
-            >
-              {onlineItem.username}
-            </Typography>
-          ))}
+          {online.length > 0 &&
+            online.map((onlineItem) => (
+              <Typography key={onlineItem} variant="h4">
+                {onlineItem}
+              </Typography>
+            ))}
         </Grid>
       </Grid>
     </Grid>
