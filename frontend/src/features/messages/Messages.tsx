@@ -1,6 +1,6 @@
-import { Button, Container, Grid, TextField, Typography } from "@mui/material";
+import { Button, Grid, TextField, Typography } from "@mui/material";
 import { useAppSelector } from "../../app/hooks";
-import { IncomingMessage, Message } from "../../types";
+import { IncomingMessage, Message, User } from "../../types";
 import { useEffect, useRef, useState } from "react";
 import { selectUser } from "../users/usersSlice";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ const Messages = () => {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [online, setOnline] = useState<string[]>([]);
+  const [online, setOnline] = useState<User[]>([]);
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const ws = useRef<WebSocket | null>(null);
@@ -153,8 +153,8 @@ const Messages = () => {
           </Typography>
           {online.length > 0 &&
             online.map((onlineItem) => (
-              <Typography key={onlineItem} variant="h4">
-                {onlineItem}
+              <Typography key={onlineItem._id} variant="h4">
+                {onlineItem.displayName}
               </Typography>
             ))}
         </Grid>

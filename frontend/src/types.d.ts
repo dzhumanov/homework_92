@@ -62,7 +62,7 @@ export interface IncomingChatMessage {
 
 export interface incomingOnlineMessage {
   type: "ONLINE";
-  users: string[];
+  users: User[];
 }
 
 export type IncomingMessage =

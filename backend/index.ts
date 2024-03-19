@@ -8,10 +8,18 @@ import {
   ActiveConnections,
   IncomingMessage,
   OnlineUsers,
-  payloadMutation,
+  messageMutation,
 } from "./types";
 import Message from "./models/Message";
 import User from "./models/User";
+import {
+  Welcome,
+  WelcomeMessages,
+  sendMessageToActive,
+  sendMessagesToAll,
+  sendOnlineUsers,
+} from "./functions/functions";
+import { authWS } from "./middleware/auth";
 
 const app = express();
 expressWs(app);
@@ -26,35 +34,6 @@ app.use("/users", userRouter);
 const webSocketRouter = express.Router();
 
 const activeConnections: ActiveConnections = {};
-
-const authWS = async (token: string) => {
-  const user = await User.findOne({ token });
-  return user;
-};
-
-const sendMessageToActive = (payload: payloadMutation) => {
-  Object.values(activeConnections).forEach((connection) => {
-    const outgoingMsg = {
-      type: "NEW_MESSAGE",
-      payload,
-    };
-    connection.send(JSON.stringify(outgoingMsg));
-  });
-};
-
-const sendOnlineUsers = async () => {
-  const onlineUsers = await User.find({ isActive: true });
-  const onlinedisplayNames = onlineUsers.map((user) => user.displayName);
-
-  const outgoingMsg = {
-    type: "ONLINE",
-    users: onlinedisplayNames,
-  };
-
-  Object.values(activeConnections).forEach((connection) => {
-    connection.send(JSON.stringify(outgoingMsg));
-  });
-};
 
 webSocketRouter.ws("/chat", (ws, req) => {
   const id = crypto.randomUUID();
@@ -73,28 +52,11 @@ webSocketRouter.ws("/chat", (ws, req) => {
         user.isActive = true;
         await user.save();
         console.log("Authentication successful");
-        ws.send(
-          JSON.stringify({
-            type: "WELCOME",
-            payload: "Hello, you have connected to the chat!",
-          })
-        );
 
-        const messages = await Message.find()
-          .sort({ date: -1 })
-          .limit(30)
-          .populate("user", "username displayName");
+        Welcome(ws);
+        WelcomeMessages(ws);
 
-        const reversedMessages = messages.reverse();
-        ws.send(
-          JSON.stringify({
-            type: "MESSAGES",
-            payload: reversedMessages,
-          })
-        );
-
-        await sendOnlineUsers();
-
+        await sendOnlineUsers(activeConnections);
         users[id] = user;
       } else {
         ws.close();
@@ -108,31 +70,20 @@ webSocketRouter.ws("/chat", (ws, req) => {
       });
       newMessage.save();
 
-      const payload: payloadMutation = {
+      const payload: messageMutation = {
         user: parsedMessage.payload.user,
         message: parsedMessage.payload.message,
         date: new Date(),
         _id: newMessage._id,
       };
 
-      sendMessageToActive(payload);
+      sendMessageToActive(payload, activeConnections);
     }
 
     if (parsedMessage.type === "DELETE") {
       try {
         await Message.findByIdAndDelete(parsedMessage.payload);
-        const messages = await Message.find()
-          .sort({ date: -1 })
-          .limit(30)
-          .populate("user", "username displayName");
-
-        const reversedMessages = messages.reverse();
-        ws.send(
-          JSON.stringify({
-            type: "MESSAGES",
-            payload: reversedMessages,
-          })
-        );
+        sendMessagesToAll(activeConnections);
       } catch (e) {
         console.error(e);
       }
@@ -148,7 +99,7 @@ webSocketRouter.ws("/chat", (ws, req) => {
         userDB.isActive = false;
         await userDB.save();
         console.log("Client disconnected:", id);
-        sendOnlineUsers();
+        sendOnlineUsers(activeConnections);
       }
       delete users[id];
     }

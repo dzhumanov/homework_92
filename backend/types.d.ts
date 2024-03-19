@@ -40,7 +40,7 @@ export interface IncomingMessage {
   };
 }
 
-export interface payloadMutation {
+export interface messageMutation {
   _id: mongoose.Type.ObjectId;
   user: UserType;
   message: string;
