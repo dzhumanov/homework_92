@@ -45,6 +45,11 @@ export interface Message {
   date: number;
 }
 
+export interface WhisperMutation {
+  userId: string;
+  message: string;
+}
+
 export interface IncomingWelcomeMessage {
   type: "WELCOME";
   payload: string;
@@ -56,7 +61,7 @@ export interface IncomingMessages {
 }
 
 export interface IncomingChatMessage {
-  type: "NEW_MESSAGE";
+  type: "NEW_MESSAGE" | "NEW_PERSONAL_MESSAGE";
   payload: ChatMessage;
 }
 

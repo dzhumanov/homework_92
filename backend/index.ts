@@ -20,6 +20,7 @@ import {
   sendOnlineUsers,
 } from "./functions/functions";
 import { authWS } from "./middleware/auth";
+import { WebSocket } from "ws";
 
 const app = express();
 expressWs(app);
@@ -34,13 +35,11 @@ app.use("/users", userRouter);
 const webSocketRouter = express.Router();
 
 const activeConnections: ActiveConnections = {};
-
+const users: OnlineUsers = {};
 webSocketRouter.ws("/chat", (ws, req) => {
   const id = crypto.randomUUID();
   console.log("Client connected id=", id);
   activeConnections[id] = ws;
-
-  const users: OnlineUsers = {};
 
   ws.on("message", async (message) => {
     const parsedMessage = JSON.parse(message.toString()) as IncomingMessage;
@@ -58,6 +57,7 @@ webSocketRouter.ws("/chat", (ws, req) => {
 
         await sendOnlineUsers(activeConnections);
         users[id] = user;
+        console.log(users);
       } else {
         ws.close();
       }
@@ -78,6 +78,32 @@ webSocketRouter.ws("/chat", (ws, req) => {
       };
 
       sendMessageToActive(payload, activeConnections);
+    }
+
+    if (parsedMessage.type === "PERSONAL_MESSAGE") {
+      const payload: messageMutation = {
+        user: parsedMessage.payload.user,
+        message: parsedMessage.payload.message,
+        date: new Date(),
+        _id: crypto.randomUUID(),
+      };
+
+      let username: string;
+
+      if (parsedMessage.payload.receiver) {
+        username = parsedMessage.payload.receiver.username;
+      }
+
+      const IDS = Object.keys(users).filter(
+        (id) => users[id].username === username
+      );
+
+      activeConnections[IDS[0]].send(
+        JSON.stringify({
+          type: "NEW_PERSONAL_MESSAGE",
+          payload: payload,
+        })
+      );
     }
 
     if (parsedMessage.type === "DELETE") {

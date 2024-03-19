@@ -37,6 +37,7 @@ export interface IncomingMessage {
     user: UserType;
     message: string;
     date: Date;
+    receiver?: UserType;
   };
 }
 
@@ -48,10 +49,11 @@ export interface messageMutation {
 }
 
 export interface OnlineUser {
-  _id: mongoose.Types.ObjectId;
+  _id: mongoose.Types.ObjectId | string;
   displayName: string;
   token: string;
   isActive: boolean;
+  username: string;
 }
 
 export interface OnlineUsers {
