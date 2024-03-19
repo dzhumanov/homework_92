@@ -21,7 +21,6 @@ import {
   sendOnlineUsers,
 } from "./functions/functions";
 import { authWS } from "./middleware/auth";
-import { WebSocket } from "ws";
 
 const app = express();
 expressWs(app);
@@ -125,7 +124,6 @@ webSocketRouter.ws("/chat", (ws, req) => {
       if (userDB) {
         userDB.isActive = false;
         await userDB.save();
-        console.log("Client disconnected:", id);
         sendOnlineUsers(activeConnections);
       }
       delete users[id];

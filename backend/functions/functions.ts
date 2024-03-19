@@ -74,7 +74,10 @@ export const WelcomeMessages = async (ws: WebSocket) => {
   );
 };
 
-export const findUsersInConnections = (usernames: string[], users: OnlineUsers) => {
+export const findUsersInConnections = (
+  usernames: string[],
+  users: OnlineUsers
+) => {
   const userIds: string[] = [];
 
   usernames.forEach((username) => {

@@ -11,7 +11,6 @@ interface Props {
 
 const MessageItem: React.FC<Props> = ({ message, onDelete }) => {
   const user = useAppSelector(selectUser);
-  console.log(message);
 
   return (
     <Grid

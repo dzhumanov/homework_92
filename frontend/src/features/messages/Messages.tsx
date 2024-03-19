@@ -108,7 +108,6 @@ const Messages = () => {
 
   const setWhisper = (user: User) => {
     setPersonalMessage(user);
-    console.log(personalMessage);
   };
 
   const sendMessage = (e: React.FormEvent) => {
@@ -210,12 +209,16 @@ const Messages = () => {
                 variant="h4"
                 sx={{
                   cursor: "pointer",
-                  color: personalMessage?._id === onlineItem._id ? "red" : "initial",
+                  color:
+                    personalMessage?._id === onlineItem._id ? "red" : "initial",
                 }}
               >
                 {onlineItem.displayName}
               </Typography>
             ))}
+          <Typography variant="h5" sx={{ mt: "auto" }}>
+            To send personal message, click on user above
+          </Typography>
         </Grid>
       </Grid>
 

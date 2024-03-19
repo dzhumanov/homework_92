@@ -49,7 +49,7 @@ const Register = () => {
       await dispatch(register(state)).unwrap();
       navigate("/");
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   };
 
