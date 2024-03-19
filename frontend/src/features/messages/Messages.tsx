@@ -69,7 +69,12 @@ const Messages = () => {
         }
 
         if (decodedMessage.type === "NEW_PERSONAL_MESSAGE") {
-          setMessages((prev) => [...prev, decodedMessage.payload]);
+          const personalMessage = {
+            ...decodedMessage.payload,
+            personal: true,
+          };
+
+          setMessages((prev) => [...prev, personalMessage]);
         }
 
         if (decodedMessage.type === "ONLINE") {
@@ -203,7 +208,10 @@ const Messages = () => {
                 onClick={() => setWhisper(onlineItem)}
                 key={onlineItem._id}
                 variant="h4"
-                sx={{ cursor: "pointer" }}
+                sx={{
+                  cursor: "pointer",
+                  color: personalMessage?._id === onlineItem._id ? "red" : "initial",
+                }}
               >
                 {onlineItem.displayName}
               </Typography>

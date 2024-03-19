@@ -15,6 +15,7 @@ import User from "./models/User";
 import {
   Welcome,
   WelcomeMessages,
+  findUsersInConnections,
   sendMessageToActive,
   sendMessagesToAll,
   sendOnlineUsers,
@@ -88,22 +89,22 @@ webSocketRouter.ws("/chat", (ws, req) => {
         _id: crypto.randomUUID(),
       };
 
-      let username: string;
+      const senderUsername = parsedMessage.payload.user.username;
+      const receiverUsername = parsedMessage.payload.receiver.username;
 
-      if (parsedMessage.payload.receiver) {
-        username = parsedMessage.payload.receiver.username;
-      }
-
-      const IDS = Object.keys(users).filter(
-        (id) => users[id].username === username
+      const userIds = findUsersInConnections(
+        [senderUsername, receiverUsername],
+        users
       );
 
-      activeConnections[IDS[0]].send(
-        JSON.stringify({
-          type: "NEW_PERSONAL_MESSAGE",
-          payload: payload,
-        })
-      );
+      userIds.forEach((userId) => {
+        activeConnections[userId].send(
+          JSON.stringify({
+            type: "NEW_PERSONAL_MESSAGE",
+            payload: payload,
+          })
+        );
+      });
     }
 
     if (parsedMessage.type === "DELETE") {

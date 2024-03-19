@@ -11,13 +11,17 @@ interface Props {
 
 const MessageItem: React.FC<Props> = ({ message, onDelete }) => {
   const user = useAppSelector(selectUser);
+  console.log(message);
 
   return (
     <Grid
       item
       container
       direction="column"
-      sx={{ borderTop: "1px solid black" }}
+      sx={{
+        borderTop: "1px solid black",
+        background: message.personal ? "gray" : "inherit",
+      }}
     >
       <Grid item container justifyContent="space-between">
         <Typography variant="h4">{message.user.displayName}</Typography>
@@ -32,6 +36,7 @@ const MessageItem: React.FC<Props> = ({ message, onDelete }) => {
               fontSize: "20px",
               bgcolor: "red",
               color: "#fff",
+              display: message.personal ? "none" : "block",
               "&:hover": {
                 bgcolor: "#fff",
                 color: "#000",
@@ -49,7 +54,12 @@ const MessageItem: React.FC<Props> = ({ message, onDelete }) => {
           {dayjs(message.date).format("HH:mm:ss")}
         </Typography>
       </Grid>
-      <Typography variant="h4">{message.message}</Typography>
+      <Grid item container justifyContent="space-between">
+        <Typography variant="h4">{message.message}</Typography>
+        {message.personal && (
+          <Typography variant="h6">This message is personal</Typography>
+        )}
+      </Grid>
     </Grid>
   );
 };

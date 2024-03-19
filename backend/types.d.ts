@@ -37,7 +37,7 @@ export interface IncomingMessage {
     user: UserType;
     message: string;
     date: Date;
-    receiver?: UserType;
+    receiver: UserType;
   };
 }
 

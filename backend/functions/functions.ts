@@ -1,6 +1,6 @@
 import Message from "../models/Message";
 import User from "../models/User";
-import { ActiveConnections, messageMutation } from "../types";
+import { ActiveConnections, OnlineUsers, messageMutation } from "../types";
 import { WebSocket } from "ws";
 
 export const sendMessageToActive = (
@@ -72,4 +72,19 @@ export const WelcomeMessages = async (ws: WebSocket) => {
       payload: await FindMessages(),
     })
   );
+};
+
+export const findUsersInConnections = (usernames: string[], users: OnlineUsers) => {
+  const userIds: string[] = [];
+
+  usernames.forEach((username) => {
+    const userId = Object.keys(users).find(
+      (id) => users[id].username === username
+    );
+    if (userId) {
+      userIds.push(userId);
+    }
+  });
+
+  return userIds;
 };
